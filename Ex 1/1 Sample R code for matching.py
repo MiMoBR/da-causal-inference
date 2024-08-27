@@ -86,9 +86,9 @@ mcnemar.test(matrix(c(973,513,395,303),2,2))
 #########################
 
 #fit a propensity score model. logistic regression
+# (ARF,CHF,Cirr,colcan,Coma,lungcan,MOSF,sepsis,age,female,meanbp1,treatment,died)
 
-psmodel<-glm(treatment~ARF+CHF+Cirr+colcan+Coma+lungcan+MOSF+
-               sepsis+age+female+meanbp1+aps,
+psmodel<-glm(treatment~ARF+CHF+Cirr+colcan+Coma+lungcan+MOSF+sepsis+age+female+meanbp1+aps,
     family=binomial(),data=mydata)
 
 #show coefficients etc
@@ -98,7 +98,6 @@ pscore<-psmodel$fitted.values
 
 
 #do greedy matching on logit(PS) using Match with a caliper
-
 logit <- function(p) {log(p)-log(1-p)}
 psmatch<-Match(Tr=mydata$treatment,M=1,X=logit(pscore),replace=FALSE,caliper=.2)
 matched<-mydata[unlist(psmatch[c("index.treated","index.control")]), ]
