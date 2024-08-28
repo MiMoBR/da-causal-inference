@@ -55,4 +55,48 @@ print(paste("Maximum weight:", max_weight))
 print(weightedtable, smd=TRUE)
 
 #%% Q3 ANSWER
+ate_fit <- svyglm(re78~treat, design=weighteddata)
+summary(ate_fit)
 
+#%%
+m <- summary(ate_fit)
+m$coefficients[2,1] + c(-1, 1)*m$coefficients[2,2]*qt(0.975, df=nrow(weighteddata) - 1, lower.tail=FALSE)
+
+#%% Q4 ANSWER
+weight <- ifelse(lalonde$treat == 1, 1/(pscore), 1/(1-pscore))
+
+#%%
+ddf <- data.frame(lalonde)
+ddf$weight <- weight
+
+#%%
+design <- svydesign(ids = ~1, data = lalonde, weights = ~weight)
+
+#%%
+# Calculate percentiles and truncate weights
+weights <- weights(design)
+
+#%%
+percentiles <- quantile(weights, c(0.01, 0.99), na.rm = TRUE)
+weights_truncated <- pmin(pmax(weights, percentiles[1]), percentiles[2])
+
+#%% Update the survey design object with truncated weights
+design_truncated <- update(design, weights = weights_truncated)
+
+#%%
+# Fit the model using svyglm
+model <- svyglm(re78 ~ treat, design = design_truncated)
+summary(model)
+
+#%%
+# Compute 95% confidence interval
+coef_estimate <- coef(model)['treat']
+se_estimate <- summary(model)$coefficients['treat', 'Std. Error']
+z_score <- qnorm(0.975)
+ci_lower <- coef_estimate - z_score * se_estimate
+ci_upper <- coef_estimate + z_score * se_estimate
+
+#%%
+# Print results
+cat("Estimate of average causal effect:", coef_estimate, "\n")
+cat("95% Confidence Interval:", ci_lower, "to", ci_upper, "\n")
